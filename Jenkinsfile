@@ -2,7 +2,14 @@ pipeline {
     agent { label 'slave02' }
 
     environment {
+        // Docker Hub (username + password)
         DOCKERHUB = credentials('dockerhub-creds')
+
+        // Token SonarQube (Secret text dans Jenkins)
+        SONAR_TOKEN = credentials('sonar-token')
+
+        // URL du serveur SonarQube (ton conteneur Docker)
+        SONAR_HOST_URL = 'http://192.168.33.10:9000'
     }
 
     stages {
@@ -17,6 +24,17 @@ pipeline {
         stage('Build Maven') {
             steps {
                 sh 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                sh '''
+                  mvn sonar:sonar \
+                    -Dsonar.projectKey=student-management \
+                    -Dsonar.host.url=$SONAR_HOST_URL \
+                    -Dsonar.login=$SONAR_TOKEN
+                '''
             }
         }
 
