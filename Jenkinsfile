@@ -1,40 +1,40 @@
 pipeline {
-    agent { label 'slave01' }   // agent Jenkins où Maven + Docker sont installés
+    agent { label 'slave02' }
 
     environment {
-        DOCKER_IMAGE = "ahmedrira/student-management"
-        DOCKER_TAG   = "1.0.0"
-
-        // ID des credentials Docker Hub dans Jenkins
         DOCKERHUB = credentials('dockerhub-creds')
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // récupère le code du repo configuré dans Jenkins (SCM)
-                checkout scm
+                git branch: 'main',
+                    url: 'https://github.com/AhmeDrira/student-management.git',
+                    credentialsId: 'github-token'
             }
         }
 
-        stage('Maven build (skip tests)') {
+        stage('Build Maven') {
             steps {
-                sh 'mvn -B clean package -DskipTests'
+                sh 'mvn clean package -DskipTests'
             }
         }
 
-        stage('Docker build') {
+        stage('Build Docker Image') {
             steps {
-                sh 'docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .'
+                sh 'docker build -t ahmedrira/student-management:1.0.0 .'
             }
         }
 
-        stage('Docker push') {
+        stage('Docker Login') {
             steps {
-                sh '''
-                  docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
-                  docker logout
-                '''
+                sh 'echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin'
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                sh 'docker push ahmedrira/student-management:1.0.0'
             }
         }
     }
