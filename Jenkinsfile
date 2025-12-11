@@ -55,5 +55,21 @@ pipeline {
                 sh 'docker push ahmedrira/student-management:1.0.0'
             }
         }
-    }
+	
+	stage('Kubernetes Deploy') {
+            steps {
+                sh '''
+                  echo "Déploiement MySQL sur Kubernetes..."
+                  kubectl apply -n devops -f k8s/devops/mysql-deployment.yaml
+
+                  echo "Déploiement Spring Boot sur Kubernetes..."
+                  kubectl apply -n devops -f k8s/devops/student-management-deployment.yaml
+
+                  echo "Ressources dans le namespace devops :"
+                  kubectl get pods,svc -n devops
+                '''
+            }
+        }
+
+    }	
 }
